@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Commander Life Counter</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --gold-color: #facc15;
+      --gold-line-width: 4px;
+    }
+    
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #1a1a1a;
+      color: white;
+      font-family: sans-serif;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .container {
+      display: grid;
+      width: 100vw;
+      height: 100vh;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: 1fr 1fr;
+      border: var(--gold-line-width) solid var(--gold-color);
+      border-radius: 30px;
+      box-sizing: border-box;
+      position: relative;
+      overflow: hidden;
+    }    
+    
+    .container::after {
+      content: "";
+      position: absolute;
+      height: var(--gold-line-width);
+      width: 100%;
+      top: 50%;
+      left: 0;
+      background-color: var(--gold-color);
+      z-index: 5;
+    }
+    
+    
+    .container.show-vertical::before {
+      content: "";
+      position: absolute;
+      width: var(--gold-line-width);
+      height: 100%;
+      top: 0;
+      left: 50%;
+      background-color: var(--gold-color);
+      z-index: 5;
+    }         
+    
+    .container.show-half-vertical::before {
+      content: "";
+      position: absolute;
+      width: var(--gold-line-width);
+      height: 50%;
+      top: 0;
+      left: 50%;
+      background-color: var(--gold-color);
+      z-index: 5;
+    }
+    
+    .player {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-sizing: border-box;
+      padding: 20px;
+    }
+
+    .content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 2;
+      transition: transform 0.1s ease, filter 0.1s ease;
+    }
+
+    .life {
+      font-size: 72px;
+      margin: 20px 0;
+      font-family: 'Cinzel', serif;
+      transition: transform 0.1s ease, color 0.2s ease, text-shadow 0.2s ease;
+    }
+
+    .life.impact {
+      transform: scale(1.15);
+      color: #facc15;
+      text-shadow: 0 0 8px #facc15;
+    }
+
+    .name-input {
+      background: transparent;
+      border: none;
+      color: inherit;
+      font-family: 'Poppins', sans-serif;
+      font-size: 22px;
+      font-weight: bold;
+      text-align: center;
+      outline: none;
+      border-bottom: 1px dashed transparent;
+      padding: 2px 4px;
+      border-radius: 6px;
+      cursor: text;
+    }       
+
+    .name-input:focus {
+      border-bottom: 1px dashed var(--underline-color, white);
+    }
+
+    .color-picker {
+      margin-top: 5px;
+    }
+
+    input[type="color"] {
+      width: 40px;
+      height: 30px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .half {
+      position: absolute;
+      width: 100%;
+      height: 50%;
+      left: 0;
+      z-index: 1;
+    }
+
+    .top-half {
+      top: 0;
+      transform-origin: top;
+    }
+
+    .bottom-half {
+      bottom: 0;
+      transform-origin: bottom;
+    }
+
+    .top-half.pressed ~ .content {
+      transform: scaleY(0.97);
+      filter: brightness(0.9);
+      transform-origin: top;
+    }
+
+    .half::after {
+      content: '';
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(128, 128, 128, 0.2);
+      mix-blend-mode: overlay;
+      opacity: 0;
+      transition: opacity 0.1s ease;
+      pointer-events: none;
+    }
+
+    .top-half.pressed::after,
+    .bottom-half.pressed::after {
+      opacity: 1;
+    }
+
+    .bottom-half.pressed ~ .content {
+      transform: scaleY(0.97);
+      filter: brightness(0.9);
+      transform-origin: bottom;
+    }
+
+    #p1 { background-color: #7f1d1d; border-top-left-radius: 20px; }
+    #p2 { background-color: #1e3a8a; border-top-right-radius: 20px; }
+    #p3 { background-color: #166534; border-bottom-left-radius: 20px; }
+    #p4 { background-color: #f5f5f4; color: black; border-bottom-right-radius: 20px; }
+
+    .menu-button-wrapper {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 70px;
+      height: 70px;
+      transform: translate(-50%, -50%);
+      z-index: 10;
+      cursor: pointer;
+    }
+
+    .menu-button {
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(145deg, #3a3a3a, #2a2a2a);
+      clip-path: polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%);
+    }
+
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.6);
+      justify-content: center;
+      align-items: center;
+      z-index: 20;
+    }
+
+    .modal {
+      background: #222;
+      padding: 30px;
+      border-radius: 15px;
+      text-align: center;
+    }
+
+    .modal button {
+      font-size: 18px;
+      margin: 10px;
+      padding: 10px 20px;
+      background: #555;
+      border: none;
+      color: white;
+      border-radius: 10px;
+    }
+
+    .modal button:hover {
+      background: #777;
+    }
+
+    .dimmed {
+      opacity: 0.4;
+      pointer-events: none;
+    }
+
+    select {
+      font-size: 16px;
+      padding: 6px 10px;
+      border-radius: 6px;
+      background: #444;
+      color: white;
+      border: 1px solid #888;
+    }
+  </style>
+</head>
+<body>
+  <div class="container" id="game-container">
+    <div class="player" id="p1">
+      <div class="half top-half" ontouchstart="handlePress(event, 'p1', true, 'top')" onmousedown="handlePress(event, 'p1', false, 'top')"></div>
+      <div class="half bottom-half" ontouchstart="handlePress(event, 'p1', true, 'bottom')" onmousedown="handlePress(event, 'p1', false, 'bottom')"></div>
+      <div class="content">
+        <input class="name-input" id="name-p1" value="Player 1" />
+        <div class="life" id="life-p1">40</div>
+        <div class="color-picker"><input type="color" value="#7f1d1d" onchange="updateColor('p1', this.value)"></div>
+      </div>
+    </div>
+    <div class="player" id="p2">
+      <div class="half top-half" ontouchstart="handlePress(event, 'p2', true, 'top')" onmousedown="handlePress(event, 'p2', false, 'top')"></div>
+      <div class="half bottom-half" ontouchstart="handlePress(event, 'p2', true, 'bottom')" onmousedown="handlePress(event, 'p2', false, 'bottom')"></div>
+      <div class="content">
+        <input class="name-input" id="name-p2" value="Player 2" />
+        <div class="life" id="life-p2">40</div>
+        <div class="color-picker"><input type="color" value="#1e3a8a" onchange="updateColor('p2', this.value)"></div>
+      </div>
+    </div>
+    <div class="player" id="p3">
+      <div class="half top-half" ontouchstart="handlePress(event, 'p3', true, 'top')" onmousedown="handlePress(event, 'p3', false, 'top')"></div>
+      <div class="half bottom-half" ontouchstart="handlePress(event, 'p3', true, 'bottom')" onmousedown="handlePress(event, 'p3', false, 'bottom')"></div>
+      <div class="content">
+        <input class="name-input" id="name-p3" value="Player 3" />
+        <div class="life" id="life-p3">40</div>
+        <div class="color-picker"><input type="color" value="#166534" onchange="updateColor('p3', this.value)"></div>
+      </div>
+    </div>
+    <div class="player" id="p4">
+      <div class="half top-half" ontouchstart="handlePress(event, 'p4', true, 'top')" onmousedown="handlePress(event, 'p4', false, 'top')"></div>
+      <div class="half bottom-half" ontouchstart="handlePress(event, 'p4', true, 'bottom')" onmousedown="handlePress(event, 'p4', false, 'bottom')"></div>
+      <div class="content">
+        <input class="name-input" id="name-p4" value="Player 4" />
+        <div class="life" id="life-p4">40</div>
+        <div class="color-picker"><input type="color" value="#f5f5f4" onchange="updateColor('p4', this.value)"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="menu-button-wrapper" onclick="toggleMenu()">
+    <svg viewBox="0 0 100 100" class="menu-button">
+      <polygon
+      id="menu-border"
+      points="30,0 70,0 100,30 100,70 70,100 30,100 0,70 0,30"
+      fill="url(#buttonGradient)"
+      stroke="#facc15"
+      stroke-width="4"
+    />    
+      <defs>
+        <linearGradient id="buttonGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#3a3a3a" />
+          <stop offset="100%" stop-color="#2a2a2a" />
+        </linearGradient>
+      </defs>
+    </svg>
+  </div>  
+
+  <div class="modal-overlay" id="modal" onclick="closeModalIfClickedOutside(event)">
+    <div class="modal">
+      <h2>Game Menu</h2>
+      <button onclick="resetGame()">Reset Life</button>
+      <div style="margin-top: 20px;">
+        <label for="player-count" style="display: block; margin-bottom: 8px;">Number of Players:</label>
+        <select id="player-count" onchange="updatePlayerCount(this.value)">
+          <option value="2">2 Players</option>
+          <option value="3">3 Players</option>
+          <option value="4" selected>4 Players</option>
+        </select>        
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let holdTimer = null;
+    let repeatInterval = null;
+    let editing = false;
+    let colorEditing = false;
+    let menuOpen = false;
+
+    function handlePress(e, playerId, isTouch, half) {
+      if (editing || menuOpen || colorEditing) return;
+      e.preventDefault();
+      const amount = half === 'top' ? 1 : -1;
+      const holdAmount = half === 'top' ? 5 : -5;
+      const halfElement = document.querySelector(`#${playerId} .${half}-half`);
+      halfElement.classList.add('pressed');
+
+      holdTimer = setTimeout(() => {
+        repeatInterval = setInterval(() => updateLife(playerId, holdAmount), 200);
+      }, 500);
+
+      const cancel = () => {
+        if (holdTimer) {
+          clearTimeout(holdTimer);
+          if (!repeatInterval) updateLife(playerId, amount);
+          holdTimer = null;
+        }
+        if (repeatInterval) {
+          clearInterval(repeatInterval);
+          repeatInterval = null;
+        }
+        halfElement.classList.remove('pressed');
+        window.removeEventListener(endEvent, cancel);
+      };
+
+      const endEvent = isTouch ? 'touchend' : 'mouseup';
+      window.addEventListener(endEvent, cancel, { once: true });
+    }
+
+    function updateLife(playerId, amount) {
+      const el = document.getElementById(`life-${playerId}`);
+      el.innerText = parseInt(el.innerText) + amount;
+      el.classList.add('impact');
+      setTimeout(() => el.classList.remove('impact'), 150);
+    }
+
+    function updateColor(playerId, color) {
+      const card = document.getElementById(playerId);
+      const isLight = isLightColor(color);
+      card.style.backgroundColor = color;
+      card.style.color = isLight ? 'black' : 'white';
+      const nameInput = card.querySelector('.name-input');
+      nameInput.style.setProperty('--underline-color', isLight ? 'black' : 'white');
+    }
+
+    function isLightColor(hex) {
+      const r = parseInt(hex.substr(1, 2), 16);
+      const g = parseInt(hex.substr(3, 2), 16);
+      const b = parseInt(hex.substr(5, 2), 16);
+      return (r * 299 + g * 587 + b * 114) / 1000 > 150;
+    }
+
+    function resetGame() {
+      ['p1', 'p2', 'p3', 'p4'].forEach(id => {
+        document.getElementById(`life-${id}`).innerText = '40';
+      });
+    }
+
+    function toggleMenu() {
+      menuOpen = !menuOpen;
+      document.getElementById('modal').style.display = menuOpen ? 'flex' : 'none';
+      document.getElementById('game-container').classList.toggle('dimmed', menuOpen);
+    }
+
+    function closeModalIfClickedOutside(e) {
+      if (!document.querySelector('.modal').contains(e.target)) toggleMenu();
+    }
+
+    function updatePlayerCount(count) {
+      let numPlayers = parseInt(count);
+    
+      // Clamp to minimum 2 players
+      if (numPlayers < 2) numPlayers = 2;
+    
+      for (let i = 1; i <= 4; i++) {
+        const playerDiv = document.getElementById(`p${i}`);
+        if (playerDiv) {
+          playerDiv.style.display = i <= numPlayers ? "flex" : "none";
+          playerDiv.style.gridColumn = '';
+          playerDiv.style.gridRow = '';
+        }
+      }
+    
+      updateLayout(numPlayers);
+      toggleMenu(); // Close menu after selection
+    }
+    
+    function updateLayout(numPlayers) {
+      const container = document.getElementById('game-container');
+      container.classList.remove('show-vertical', 'show-half-vertical');
+    
+      // Reset layout
+      container.style.gridTemplateColumns = '';
+      container.style.gridTemplateRows = '';
+    
+      for (let i = 1; i <= 4; i++) {
+        const player = document.getElementById(`p${i}`);
+        if (player) {
+          player.style.gridColumn = '';
+          player.style.gridRow = '';
+        }
+      }
+    
+      switch (numPlayers) {
+        case 2:
+          container.style.gridTemplateColumns = '1fr';
+          container.style.gridTemplateRows = '1fr 1fr';
+          break;
+    
+        case 3:
+          container.style.gridTemplateColumns = '1fr 1fr';
+          container.style.gridTemplateRows = '1fr 1fr';
+          document.getElementById('p1').style.gridColumn = '1';
+          document.getElementById('p1').style.gridRow = '1';
+          document.getElementById('p2').style.gridColumn = '2';
+          document.getElementById('p2').style.gridRow = '1';
+          document.getElementById('p3').style.gridColumn = '1 / span 2';
+          document.getElementById('p3').style.gridRow = '2';
+          container.classList.add('show-half-vertical');
+          break;
+    
+        case 4:
+          container.style.gridTemplateColumns = '1fr 1fr';
+          container.style.gridTemplateRows = '1fr 1fr';
+          container.classList.add('show-vertical');
+          break;
+      }
+    }    
+
+
+    document.querySelectorAll('.name-input').forEach(input => {
+      input.addEventListener('focus', (e) => {
+        editing = true;
+        e.target.select();
+        document.getElementById('game-container').classList.add('dimmed');
+      });      
+      input.addEventListener('blur', () => {
+        editing = false;
+        document.getElementById('game-container').classList.remove('dimmed');
+      });
+    });
+
+    document.querySelectorAll('input[type="color"]').forEach(input => {
+      input.addEventListener('click', (e) => {
+        e.stopPropagation();
+        colorEditing = true;
+        document.getElementById('game-container').classList.add('dimmed');
+      });
+    });
+
+    document.addEventListener('mousedown', (e) => {
+      const isColor = e.target.closest('input[type="color"]');
+      if (!isColor && colorEditing) {
+        colorEditing = false;
+        document.getElementById('game-container').classList.remove('dimmed');
+      }
+    });
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const playerCount = document.getElementById('player-count').value;
+      updatePlayerCount(playerCount);
+    });
+    
+    document.addEventListener('DOMContentLoaded', () => {
+      // Sync button stroke-width with --gold-line-width
+      const polygon = document.getElementById('menu-border');
+      const goldWidth = getComputedStyle(document.documentElement)
+        .getPropertyValue('--gold-line-width')
+        .trim()
+        .replace('px', '');
+    
+      if (polygon && goldWidth) {
+        polygon.setAttribute('stroke-width', goldWidth);
+      }
+    
+      // Already existing code
+      const playerCount = document.getElementById('player-count').value;
+      updatePlayerCount(playerCount);
+    });
+    
+  </script>
+</body>
+</html>
