@@ -496,7 +496,6 @@
     });
     
     document.addEventListener('DOMContentLoaded', () => {
-      // Sync button stroke-width with --gold-line-width
       const polygon = document.getElementById('menu-border');
       const goldWidth = getComputedStyle(document.documentElement)
         .getPropertyValue('--gold-line-width')
@@ -507,7 +506,6 @@
         polygon.setAttribute('stroke-width', goldWidth);
       }
     
-      // Already existing code
       const playerCount = document.getElementById('player-count').value;
       updatePlayerCount(playerCount);
     });
